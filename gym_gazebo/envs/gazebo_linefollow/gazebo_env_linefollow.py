@@ -37,7 +37,7 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
 
         self._seed()
 
-        self.debug_vis = True
+
 
         self.bridge = CvBridge()
         self.timeout = 0  # Used to keep track of images with no line detected
@@ -58,7 +58,7 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
         # cv2.imshow("raw", cv_image)
 
         NUM_BINS = 10
-        MIN_PIXELS_FOR_LINE = 50
+        MIN_PIXELS_FOR_LINE = 10
 
         # TODO: Analyze the cv_image and compute the state array and
         # episode termination condition.
@@ -91,13 +91,13 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
         if len(xs) < MIN_PIXELS_FOR_LINE:
             state = [0] * NUM_BINS
             self.timeout += 1
-            done = (self.timeout > 30)
+            done = (self.timeout > 100)
             return state, done
         
         self.timeout = 0
         done = False
 
-        line_x = int(np.mean(xs))  # x-position within ROI slice [0 .. w-1]
+        line_x = int(np.mean(xs))  
 
         bin_width = float(w) / float(NUM_BINS)
         bin_index = int(line_x // bin_width)
@@ -109,26 +109,24 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
         state = [0] * NUM_BINS
         state[bin_index] = 1
 
-        if self.debug_vis:
-    # We’ll visualize on the ROI to match what we’re detecting
-            viz = roi.copy()
+        viz = roi.copy()
 
-            for b in range(1, NUM_BINS):
-                x = int(b * w / NUM_BINS)
-                cv2.line(viz, (x, 0), (x, viz.shape[0]-1), (0, 255, 0), 1)
+        for b in range(1, NUM_BINS):
+            x = int(b * w / NUM_BINS)
+            cv2.line(viz, (x, 0), (x, viz.shape[0]-1), (0, 255, 0), 1)
 
-            if len(xs) >= MIN_PIXELS_FOR_LINE:
-                cy = viz.shape[0] // 2
-                cv2.circle(viz, (int(line_x), cy), 6, (0, 0, 255), 2)
+        if len(xs) >= MIN_PIXELS_FOR_LINE:
+            cy = viz.shape[0] // 2
+            cv2.circle(viz, (int(line_x), cy), 6, (0, 0, 255), 2)
 
-            cv2.putText(viz, f"state: {state}", (8, 18),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
+        cv2.putText(viz, f"state: {state}", (8, 18),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
 
-            cv2.putText(viz, f"timeout: {self.timeout}/30  done:{done}", (8, 38),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
+        cv2.putText(viz, f"timeout: {self.timeout}/30  done:{done}", (8, 38),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
 
-            cv2.imshow("image", viz)
-            cv2.waitKey(1)
+        cv2.imshow("image", viz)
+        cv2.waitKey(1)
 
         return state, done
 
