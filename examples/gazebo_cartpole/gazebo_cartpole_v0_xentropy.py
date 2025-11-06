@@ -234,7 +234,7 @@ if __name__ == '__main__':
         # Train the NN: calculate the gradients using and then adjust the 
         # weights based on the gradients
         loss_v.backward()
-        optimizer.zero_grad
+        optimizer.step()
 
         # Display summary of current batch
         print("%d: loss=%.3f, reward_mean=%.1f, reward_bound=%.1f" % (
